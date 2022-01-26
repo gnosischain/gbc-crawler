@@ -11,7 +11,7 @@ RUN go mod download
 
 # build the binary
 ADD . .
-RUN env GOOS=linux GOARCH=amd64 go build -o /crawler cmd/main.go
+RUN env GOOS=linux go build -o /crawler cmd/main.go
 
 # final stage
 FROM alpine:3.14.0
