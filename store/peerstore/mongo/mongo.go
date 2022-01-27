@@ -349,29 +349,39 @@ type count struct {
 }
 
 type aggregateSyncData struct {
-	Total    []count `json:"total" bson:"total"`
-	Synced   []count `json:"synced" bson:"synced"`
-	Unsynced []count `json:"unsynced" bson:"unsynced"`
+	Total           []count `json:"total" bson:"total"`
+	DiscoveredPeers []count `json:"discoveredPeers" bson:"discoveredPeers"`
+	Synced          []count `json:"synced" bson:"synced"`
+	Unsynced        []count `json:"unsynced" bson:"unsynced"`
 }
 
 func (s *mongoStore) AggregateBySyncStatus(ctx context.Context) (*models.SyncAggregateData, error) {
-	total := bson.A{bson.D{{Key: "$count", Value: "count"}}}
-	synced := bson.A{bson.D{{Key: "$match", Value: bson.D{{Key: "sync.status", Value: true}}}}, bson.D{{Key: "$count", Value: "count"}}}
-	unsynced := bson.A{bson.D{{Key: "$match", Value: bson.D{{Key: "sync.status", Value: false}}}}, bson.D{{Key: "$count", Value: "count"}}}
+	total := bson.A{
+		bson.D{{Key: "$match", Value: bson.D{{Key: "is_connectable", Value: true}}}},
+		bson.D{{Key: "$count", Value: "count"}},
+	}
+	discoveredPeers := bson.A{
+		bson.D{{Key: "$group", Value: bson.D{{Key: "_id", Value: "$ip"}}}},
+		bson.D{{Key: "$count", Value: "count"}},
+	}
+	synced := bson.A{
+		bson.D{{Key: "$match", Value: bson.D{{Key: "is_connectable", Value: true}}}},
+		bson.D{{Key: "$match", Value: bson.D{{Key: "sync.status", Value: true}}}},
+		bson.D{{Key: "$count", Value: "count"}},
+	}
+	unsynced := bson.A{
+		bson.D{{Key: "$match", Value: bson.D{{Key: "is_connectable", Value: true}}}},
+		bson.D{{Key: "$match", Value: bson.D{{Key: "sync.status", Value: false}}}},
+		bson.D{{Key: "$count", Value: "count"}},
+	}
 
 	facetStage := bson.D{{Key: "$facet", Value: bson.D{
 		{Key: "total", Value: total},
+		{Key: "discoveredPeers", Value: discoveredPeers},
 		{Key: "synced", Value: synced},
 		{Key: "unsynced", Value: unsynced}}}}
 
-	query := mongo.Pipeline{
-		bson.D{
-			{Key: "$match", Value: bson.D{
-				{Key: "is_connectable", Value: bson.D{{Key: "$eq", Value: true}}},
-			}},
-		},
-		facetStage,
-	}
+	query := mongo.Pipeline{facetStage}
 	cursor, err := s.coll.Aggregate(ctx, query)
 	if err != nil {
 		return nil, err
@@ -386,6 +396,9 @@ func (s *mongoStore) AggregateBySyncStatus(ctx context.Context) (*models.SyncAgg
 		}
 		if len(data.Total) != 0 {
 			result.Total = data.Total[0].Count
+		}
+		if len(data.DiscoveredPeers) != 0 {
+			result.DiscoveredPeers = data.DiscoveredPeers[0].Count
 		}
 		if len(data.Synced) != 0 {
 			result.Synced = data.Synced[0].Count

@@ -25,6 +25,7 @@ type HeatmapData struct {
 
 type NodeStats struct {
 	TotalNodes             int     `json:"totalNodes"`
+	DiscoveredPeers        int     `json:"discoveredPeers"`
 	NodeSyncedPercentage   float64 `json:"nodeSyncedPercentage"`
 	NodeUnsyncedPercentage float64 `json:"nodeUnsyncedPercentage"`
 }

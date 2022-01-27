@@ -138,6 +138,7 @@ func (r *queryResolver) GetNodeStats(ctx context.Context) (*model.NodeStats, err
 	}
 	return &model.NodeStats{
 		TotalNodes:             aggregateData.Total,
+		DiscoveredPeers:        aggregateData.DiscoveredPeers,
 		NodeSyncedPercentage:   (float64(aggregateData.Synced) / float64(aggregateData.Total)) * 100,
 		NodeUnsyncedPercentage: (float64(aggregateData.Unsynced) / float64(aggregateData.Total)) * 100,
 	}, nil

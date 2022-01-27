@@ -64,6 +64,7 @@ type ComplexityRoot struct {
 	}
 
 	NodeStats struct {
+		DiscoveredPeers        func(childComplexity int) int
 		NodeSyncedPercentage   func(childComplexity int) int
 		NodeUnsyncedPercentage func(childComplexity int) int
 		TotalNodes             func(childComplexity int) int
@@ -207,6 +208,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.HeatmapData.SyncStatus(childComplexity), true
+
+	case "NodeStats.discoveredPeers":
+		if e.complexity.NodeStats.DiscoveredPeers == nil {
+			break
+		}
+
+		return e.complexity.NodeStats.DiscoveredPeers(childComplexity), true
 
 	case "NodeStats.nodeSyncedPercentage":
 		if e.complexity.NodeStats.NodeSyncedPercentage == nil {
@@ -416,6 +424,7 @@ type ClientVersionAggregation {
 
 type NodeStats {
   totalNodes: Int!
+  discoveredPeers: Int!
   nodeSyncedPercentage: Float!
   nodeUnsyncedPercentage: Float!
 }
@@ -978,6 +987,41 @@ func (ec *executionContext) _NodeStats_totalNodes(ctx context.Context, field gra
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.TotalNodes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NodeStats_discoveredPeers(ctx context.Context, field graphql.CollectedField, obj *model.NodeStats) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "NodeStats",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DiscoveredPeers, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3006,6 +3050,11 @@ func (ec *executionContext) _NodeStats(ctx context.Context, sel ast.SelectionSet
 			out.Values[i] = graphql.MarshalString("NodeStats")
 		case "totalNodes":
 			out.Values[i] = ec._NodeStats_totalNodes(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "discoveredPeers":
+			out.Values[i] = ec._NodeStats_discoveredPeers(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
