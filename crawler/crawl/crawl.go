@@ -22,6 +22,7 @@ import (
 )
 
 const GBCAltairForkDigest = "0x56fdb5e0"
+const MainnetAltairForkDigest = "0xafcaaba0"
 
 type crawler struct {
 	disc            resolver
@@ -99,7 +100,7 @@ func (c *crawler) storePeer(ctx context.Context, node *enode.Node) {
 		return
 	}
 
-	if eth2Data.ForkDigest.String() == GBCAltairForkDigest {
+	if eth2Data.ForkDigest.String() == MainnetAltairForkDigest {
 		log.Debug("found a eth2 node", log.Ctx{"node": node})
 
 		// get basic info

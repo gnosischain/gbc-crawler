@@ -11,6 +11,7 @@ import (
 	"eth2-crawler/store/record"
 
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/params"
 )
 
 //nolint:lll
@@ -31,7 +32,7 @@ func Start(peerStore peerstore.Provider, historyStore record.Provider, ipResolve
 	)
 	log.Root().SetHandler(handler)
 
-	err := crawl.Initialize(peerStore, historyStore, ipResolver, GBCBootnodes)
+	err := crawl.Initialize(peerStore, historyStore, ipResolver, params.V5Bootnodes)
 	if err != nil {
 		panic(err)
 	}

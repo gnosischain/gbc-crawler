@@ -21,6 +21,7 @@ import (
 
 const GBCGenesisTimestamp = 1638993340
 const GBCSecondsPerSlot = 5
+const MainnetSecondsPerSlot = 12
 
 func AddrsFromEnode(node *enode.Node) (*peer.AddrInfo, error) {
 	madds, err := EnodeToMultiAddr(node)
@@ -140,10 +141,11 @@ func (aee AttnetsENREntry) String() string {
 }
 
 func getGenesisTime() time.Time {
-	return time.Unix(GBCGenesisTimestamp, 0)
+	t, _ := time.Parse(time.RFC822, "01 Dec 20 12:00 GMT")
+	return t
 }
 
 func CurrentBlock() int64 {
 	duration := time.Since(getGenesisTime())
-	return int64((duration / time.Second) / GBCSecondsPerSlot)
+	return int64((duration / time.Second) / MainnetSecondsPerSlot)
 }
