@@ -78,6 +78,21 @@ func (r *queryResolver) AggregateByNetwork(ctx context.Context) ([]*model.Aggreg
 	return result, nil
 }
 
+func (r *queryResolver) AggregateByHost(ctx context.Context) ([]*model.AggregateData, error) {
+	aggregateData, err := r.peerStore.AggregateByHostName(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result := []*model.AggregateData{}
+	for i := range aggregateData {
+		result = append(result, &model.AggregateData{
+			Name:  aggregateData[i].Name,
+			Count: aggregateData[i].Count,
+		})
+	}
+	return result, nil
+}
+
 func (r *queryResolver) AggregateByClientVersion(ctx context.Context) ([]*model.ClientVersionAggregation, error) {
 	aggregateData, err := r.peerStore.AggregateByClientVersion(ctx)
 	if err != nil {

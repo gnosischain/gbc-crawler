@@ -44,6 +44,7 @@ type Query {
   aggregateByCountry: [AggregateData!]!
   aggregateByOperatingSystem: [AggregateData!]!
   aggregateByNetwork: [AggregateData!]!
+  aggregateByHost: [AggregateData!]!
   aggregateByClientVersion: [ClientVersionAggregation!]!
   getHeatmapData: [HeatmapData!]!
   getNodeStats: NodeStats!

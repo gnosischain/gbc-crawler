@@ -344,6 +344,43 @@ func (s *mongoStore) AggregateByNetworkType(ctx context.Context) ([]*models.Aggr
 	return result, nil
 }
 
+func (s *mongoStore) AggregateByHostName(ctx context.Context) ([]*models.AggregateData, error) {
+	query := mongo.Pipeline{
+		bson.D{
+			// avoid aggregation of entries without geolocation information
+			{Key: "$match", Value: bson.D{
+				{Key: "$and", Value: bson.A{
+					bson.D{{Key: "is_connectable", Value: bson.D{{Key: "$eq", Value: true}}}},
+					bson.D{{Key: "geo_location", Value: bson.D{{Key: "$ne", Value: nil}}}},
+				}},
+			}},
+		},
+		bson.D{
+			{Key: "$group", Value: bson.D{
+				{Key: "_id", Value: "$geo_location.asn.name"},
+				{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
+			}},
+		},
+	}
+	cursor, err := s.coll.Aggregate(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	var result []*models.AggregateData
+	for cursor.Next(ctx) {
+		// create a value into which the single document can be decoded
+		data := new(aggregateData)
+		err := cursor.Decode(data)
+		if err != nil {
+			return nil, err
+		}
+
+		result = append(result, &models.AggregateData{Name: data.ID, Count: data.Count})
+	}
+	return result, nil
+}
+
 type count struct {
 	Count int `json:"count" bson:"count"`
 }

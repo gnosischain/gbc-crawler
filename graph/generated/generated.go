@@ -82,6 +82,7 @@ type ComplexityRoot struct {
 		AggregateByClientVersion   func(childComplexity int) int
 		AggregateByCountry         func(childComplexity int) int
 		AggregateByNetwork         func(childComplexity int) int
+		AggregateByHost         func(childComplexity int) int
 		AggregateByOperatingSystem func(childComplexity int) int
 		GetAltairUpgradePercentage func(childComplexity int) int
 		GetHeatmapData             func(childComplexity int) int
@@ -102,6 +103,7 @@ type QueryResolver interface {
 	AggregateByCountry(ctx context.Context) ([]*model.AggregateData, error)
 	AggregateByOperatingSystem(ctx context.Context) ([]*model.AggregateData, error)
 	AggregateByNetwork(ctx context.Context) ([]*model.AggregateData, error)
+	AggregateByHost(ctx context.Context) ([]*model.AggregateData, error)
 	AggregateByClientVersion(ctx context.Context) ([]*model.ClientVersionAggregation, error)
 	GetHeatmapData(ctx context.Context) ([]*model.HeatmapData, error)
 	GetNodeStats(ctx context.Context) (*model.NodeStats, error)
@@ -292,6 +294,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.AggregateByNetwork(childComplexity), true
+	
+	case "Query.aggregateByHost":
+		if e.complexity.Query.AggregateByHost == nil {
+			break
+		}
+
+		return e.complexity.Query.AggregateByHost(childComplexity), true
 
 	case "Query.aggregateByOperatingSystem":
 		if e.complexity.Query.AggregateByOperatingSystem == nil {
@@ -457,6 +466,7 @@ type Query {
   aggregateByCountry: [AggregateData!]!
   aggregateByOperatingSystem: [AggregateData!]!
   aggregateByNetwork: [AggregateData!]!
+  aggregateByHost: [AggregateData!]!
   aggregateByClientVersion: [ClientVersionAggregation!]!
   getHeatmapData: [HeatmapData!]!
   getNodeStats: NodeStats!
@@ -1337,6 +1347,41 @@ func (ec *executionContext) _Query_aggregateByOperatingSystem(ctx context.Contex
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Query().AggregateByOperatingSystem(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.AggregateData)
+	fc.Result = res
+	return ec.marshalNAggregateData2ᚕᚖeth2ᚑcrawlerᚋgraphᚋmodelᚐAggregateDataᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_aggregateByHost(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().AggregateByHost(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3192,6 +3237,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
+		case "aggregateByHost":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_aggregateByHost(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})			
 		case "aggregateByClientVersion":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
